@@ -6,3 +6,6 @@ Cargo.lock
 *.pdb
 lib/test/data/generated*
 */pkg/*
+
+# macOS
+.DS_Store
