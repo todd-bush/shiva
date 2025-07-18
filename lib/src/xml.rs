@@ -101,9 +101,10 @@ impl TransformerTrait for Transformer {
 
         let mut element_data: Option<&Node> = None;
 
-        let tree = Node::from_xml(&mut reader);
+        let tree =
+            Node::from_xml(&mut reader).map_err(|e| anyhow::anyhow!("XML parsing error: {}", e))?;
         for node in &tree {
-            for child in node {
+            for child in &node.children {
                 element_data = Some(child);
             }
         }

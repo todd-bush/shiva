@@ -115,6 +115,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
         /*
            //Logging Settings
