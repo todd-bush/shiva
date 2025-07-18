@@ -87,9 +87,14 @@ async fn main_response_mapper(res: Response) -> Response {
 
 #[cfg(test)]
 mod tests {
+    use crate::web::routes_files::handler_convert_file;
     use anyhow::anyhow;
     use anyhow::Error;
     use anyhow::Result;
+    use axum::extract::DefaultBodyLimit;
+    use axum::middleware;
+    use axum::routing::{get, post};
+    use axum::Router;
     use log::info;
     use reqwest::multipart;
     use reqwest::Body;
@@ -97,6 +102,8 @@ mod tests {
     use std::io::Cursor;
     use std::io::Write;
     use tokio::fs::File;
+    use tokio::net::TcpListener;
+    use tower_http::limit::RequestBodyLimitLayer;
 
     #[tokio::test]
     async fn test_server() -> Result<()> {
@@ -116,6 +123,29 @@ mod tests {
                .init();
         */
 
+        // Start the server in a background task
+        let server_handle = tokio::spawn(async {
+            let route_test = Router::new().route("/test_server", get(crate::handler_answer_server));
+
+            let route_input_file = Router::new()
+                .route("/transform/:output_format", post(handler_convert_file))
+                .layer(DefaultBodyLimit::disable())
+                .layer(RequestBodyLimitLayer::new(100 * 1024 * 1024)); //file size limit - 100 Mb
+
+            let routes_all = Router::new()
+                .merge(route_test)
+                .merge(route_input_file)
+                .layer(middleware::map_response(crate::main_response_mapper));
+
+            let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+            info!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
+
+            axum::serve(listener, routes_all).await.unwrap();
+        });
+
+        // Give the server a moment to start
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
         //We form all combinations of incoming and outgoing file formats
         let input_formats = vec!["md", "html", "txt"];
         let output_formats = vec!["md", "html", "txt", "pdf", "json", "rtf", "docx"];
@@ -124,7 +154,12 @@ mod tests {
         for input_format in &input_formats {
             for output_format in &output_formats {
                 // Creating a temporary file with test data
-                let file_data = " Test file data";
+                let file_data = match input_format {
+                    &"md" => "# Test Document\n\nThis is a test markdown document.",
+                    &"html" | &"htm" => "<html><body><h1>Test Document</h1><p>This is a test HTML document.</p></body></html>",
+                    &"txt" => "Test Document\n\nThis is a test text document.",
+                    _ => return Err(anyhow!("Invalid input format: {}", input_format)),
+                };
                 let file_name = format!("test_file.{}", input_format);
                 let mut file = Cursor::new(Vec::new());
                 file.write_all(file_data.as_bytes())?;
@@ -135,15 +170,11 @@ mod tests {
                 // Creating a multipart part with a file
                 let part = multipart::Part::stream(body)
                     .file_name(file_name)
-                    .mime_str(match output_format {
+                    .mime_str(match input_format {
                         &"md" => "text/markdown",
                         &"html" | &"htm" => "text/html",
                         &"txt" => "text/plain",
-                        &"pdf" => "application/pdf",
-                        &"json" => "application/json",
-                        &"rtf" => "application/rtf",
-                        &"docx" => "application/docx",
-                        _ => return Err(anyhow!("Invalid output format: {}", output_format)),
+                        _ => return Err(anyhow!("Invalid input format: {}", input_format)),
                     })?;
 
                 // Creating a multipart/form-data with a file and additional data
@@ -157,35 +188,32 @@ mod tests {
                 info!("sending the test_file.{}", input_format);
 
                 // Sending a POST request to the server with the multipart form
-                let mut response = client
+                let response = client
                     .post(&format!(
                         "http://localhost:8080/transform/{}",
                         output_format
                     ))
                     .multipart(form)
                     .send()
-                    .await
-                    .unwrap();
+                    .await?;
 
                 // Checking the server response
                 assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-                if response.status().is_success() {
-                    let file_name_2 = format!("test_file.{}", output_format);
-                    let mut file = File::create(file_name_2).await?;
-                    use tokio::io::AsyncWriteExt;
-
-                    while let Some(chunk) = response.chunk().await? {
-                        file.write_all(&chunk).await?;
-                    }
-                }
+                // Verify we got some content back
+                let content = response.bytes().await?;
+                assert!(!content.is_empty(), "Response should not be empty");
 
                 info!(
-                    "the file has been successfully converted to the format {}",
-                    output_format
+                    "the file has been successfully converted from {} to {}",
+                    input_format, output_format
                 )
             }
         }
+
+        // Abort the server task
+        server_handle.abort();
+        let _ = server_handle.await;
 
         Ok(())
     }
@@ -288,6 +316,29 @@ mod tests {
 
         */
 
+        // Start the server in a background task
+        let server_handle = tokio::spawn(async {
+            let route_test = Router::new().route("/test_server", get(crate::handler_answer_server));
+
+            let route_input_file = Router::new()
+                .route("/transform/:output_format", post(handler_convert_file))
+                .layer(DefaultBodyLimit::disable())
+                .layer(RequestBodyLimitLayer::new(100 * 1024 * 1024)); //file size limit - 100 Mb
+
+            let routes_all = Router::new()
+                .merge(route_test)
+                .merge(route_input_file)
+                .layer(middleware::map_response(crate::main_response_mapper));
+
+            let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+            info!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
+
+            axum::serve(listener, routes_all).await.unwrap();
+        });
+
+        // Give the server a moment to start
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
         let file_data = "Test file data";
         let file_name = "test_file.md";
         let mut file = Cursor::new(Vec::new());
@@ -297,7 +348,7 @@ mod tests {
 
         let part = multipart::Part::stream(body)
             .file_name(file_name)
-            .mime_str("application/md")?;
+            .mime_str("text/markdown")?;
 
         let form = multipart::Form::new()
             .part("file", part)
@@ -313,15 +364,15 @@ mod tests {
 
         assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-        let pdf_content = response.bytes().await?;
+        let json_content = response.bytes().await?;
 
         let output_formats = vec!["md", "html", "txt", "pdf", "json", "rtf"];
 
         for output_format in &output_formats {
-            let body = Body::from(pdf_content.clone());
+            let body = Body::from(json_content.clone());
 
             let part = multipart::Part::stream(body)
-                .file_name(".json")
+                .file_name("test_file.json")
                 .mime_str("application/json")?;
 
             let form = multipart::Form::new()
@@ -348,6 +399,10 @@ mod tests {
                 output_format
             )
         }
+
+        // Abort the server task
+        server_handle.abort();
+        let _ = server_handle.await;
 
         Ok(())
     }

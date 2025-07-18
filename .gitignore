@@ -9,3 +9,5 @@ lib/test/data/generated*
 
 # macOS
 .DS_Store
+
+/test/data/*

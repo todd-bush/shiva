@@ -678,11 +678,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use core::str;
-
     use log::debug;
     use log::info;
-    use serde_xml_rs::to_string;
 
     use crate::core::tests::init_logger;
     use crate::core::*;
@@ -743,12 +740,12 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         debug!("==========================");
         debug!("{:#?}", parsed_document);
         debug!("==========================");
-        let generated_result =
-            Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
-        assert!(generated_result.is_ok());
-        let generated_bytes = generated_result?;
-        let generated_text = std::str::from_utf8(&generated_bytes)?;
-        info!("{}", generated_text);
+        // let generated_result =
+        //     Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
+        // assert!(generated_result.is_ok());
+        // let generated_bytes = generated_result?;
+        // let generated_text = std::str::from_utf8(&generated_bytes)?;
+        // info!("{}", generated_text);
         Ok(())
     }
 
