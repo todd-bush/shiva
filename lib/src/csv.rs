@@ -4,7 +4,6 @@ use crate::core::{
     TableCell, TableHeader, TableRow, TransformerTrait,
 };
 use bytes::Bytes;
-use log::info;
 pub struct Transformer;
 
 #[allow(unused)]

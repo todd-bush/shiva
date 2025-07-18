@@ -1,7 +1,8 @@
 use crate::core::{
-    Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem,
-    PageDimensions, PageFormat, TableCell, TableHeader, TableRow, TransformerTrait,
+    Document, Element, ImageData, ImageDimension, ImageType, ListItem, PageDimensions, PageFormat,
+    TableCell, TableHeader, TableRow, TransformerTrait,
 };
+use base64::Engine;
 use bytes::Bytes;
 use serde_json::Value;
 use std::str::FromStr;
@@ -159,7 +160,9 @@ impl TransformerTrait for Transformer {
                     // Encode image bytes to base64 for JSON representation
                     map.insert(
                         "bytes".to_string(),
-                        Value::String(base64::encode(&image_data.bytes())),
+                        Value::String(
+                            base64::engine::general_purpose::STANDARD.encode(image_data.bytes()),
+                        ),
                     );
                     map.insert(
                         "title".to_string(),
@@ -395,7 +398,7 @@ fn parse_element(value: &Value) -> anyhow::Result<Element> {
                 .get("bytes")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| anyhow::anyhow!("Image element missing 'bytes' field"))?;
-            let bytes = Bytes::from(base64::decode(bytes_str)?);
+            let bytes = Bytes::from(base64::engine::general_purpose::STANDARD.decode(bytes_str)?);
             let title = obj
                 .get("title")
                 .and_then(|v| v.as_str())
@@ -416,8 +419,6 @@ fn parse_element(value: &Value) -> anyhow::Result<Element> {
                 .get("align")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| anyhow::anyhow!("Image element missing 'align' field"))?;
-            let align = ImageAlignment::from_str(align_str)
-                .map_err(|_| anyhow::anyhow!("Invalid align: {}", align_str))?;
             let size_obj = obj
                 .get("size")
                 .ok_or_else(|| anyhow::anyhow!("Image element missing 'size' field"))?;

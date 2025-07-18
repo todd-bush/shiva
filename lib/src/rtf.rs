@@ -328,10 +328,6 @@ impl TransformerTrait for Transformer {
                         rtf_content.push_str("\\row");
                     }
                 }
-
-                _other_element => {
-                    warn!("Unknown element in list: {:?}", element);
-                }
             }
         }
 

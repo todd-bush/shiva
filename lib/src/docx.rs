@@ -8,7 +8,7 @@ use docx_rs::{
     LevelText, NumberFormat, Numbering, NumberingId, Paragraph, ParagraphStyle, Pic, Run, RunChild,
     SpecialIndentType, Start, TableRowChild,
 };
-use log::{error, info, warn};
+use log::{error, warn};
 use std::io::Cursor;
 
 pub struct Transformer;

@@ -665,14 +665,6 @@ where
 
             Ok(table_node)
         }
-
-        _ => {
-            let node = arena.alloc(Node::new(RefCell::new(Ast::new(
-                NodeValue::Text("".to_string()),
-                LineColumn { line: 0, column: 0 },
-            ))));
-            Ok(node)
-        }
     }
 }
 
