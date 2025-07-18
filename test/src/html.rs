@@ -629,8 +629,8 @@ mod tests {
         let expected_html_str: &str = r#"<!DOCTYPE html>
 <html>
 <body>
-<p>This is page header text</p>
 <p>test</p>
+<p>This is page header text</p>
 </body>
 </html>"#;
 
