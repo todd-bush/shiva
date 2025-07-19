@@ -1,7 +1,7 @@
 use crate::core::{Document, Element, TableHeader, TableRow, TransformerTrait};
 use bytes::Bytes;
-use image::io::Reader as ImageReader;
 use image::GenericImageView;
+use image::ImageReader;
 use log::warn;
 use std::io::Cursor;
 
