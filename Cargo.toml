@@ -4,6 +4,4 @@ resolver = "2"
 members = [
     "lib",
     "cli",
-    "test",
-    "shiva-wasm"
 ]
