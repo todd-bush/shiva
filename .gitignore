@@ -10,4 +10,5 @@ lib/test/data/generated*
 # macOS
 .DS_Store
 
-lib/test/data/output/
+**/test/data/output/*
+
