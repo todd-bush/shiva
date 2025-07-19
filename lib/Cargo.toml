@@ -35,7 +35,7 @@ features = ["text", "markdown", "html", "pdf", "json", "xml", "csv", "docx", "xl
 anyhow = "1.0.98"
 icu_locid = "1.5.0"
 bytes = { version = "1.10.1", features = ["serde"] }
-thiserror = "1.0.69"
+thiserror = "2.0.12"
 regex = { version = "1.11.1", optional = true }
 scraper = { version = "0.19.1", optional = true }
 ego-tree = { version = "0.6.3", optional = true }
