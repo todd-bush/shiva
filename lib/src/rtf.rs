@@ -387,7 +387,7 @@ mod tests {
             disk_image_loader("test/data"),
         )?;
         let generated_result = crate::rtf::Transformer::generate(&parsed)?;
-        std::fs::write("test/data/document_from_rtf.rtf", generated_result)?;
+        std::fs::write("test/data/output/document_from_rtf.rtf", generated_result)?;
 
         Ok(())
     }

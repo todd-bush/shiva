@@ -539,7 +539,7 @@ mod tests {
         let generated_result = docx::Transformer::generate(&parsed)?;
         //write to file
         info!("--->>>{:<12} - start writing document_from_md.docx", "TEST");
-        std::fs::write("test/data/document_from_md.docx", generated_result)?;
+        std::fs::write("test/data/output/document_from_md.docx", generated_result)?;
 
         Ok(())
     }

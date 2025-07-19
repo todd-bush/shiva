@@ -395,7 +395,7 @@ mod tests {
         assert!(generated_result.is_ok());
 
         std::fs::write(
-            "test/data/generated_hyperlink.pdf",
+            "test/data/output/generated_hyperlink.pdf",
             generated_result.unwrap(),
         )?;
 
@@ -410,6 +410,6 @@ mod tests {
         let document = markdown::Transformer::parse(&input_bytes).unwrap();
         let output_bytes = pdf::Transformer::generate(&document).unwrap().to_vec();
 
-        std::fs::write("test/data/test.pdf", output_bytes).unwrap();
+        std::fs::write("test/data/output/test.pdf", output_bytes).unwrap();
     }
 }
