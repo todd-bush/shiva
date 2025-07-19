@@ -44,9 +44,7 @@ impl Node {
                         let attr = attr?;
                         attributes.push(Attribute {
                             key: from_utf8(attr.key.as_ref())?.to_string(),
-                            value: attr
-                                .decode_and_unescape_value(reader.decoder())?
-                                .into_owned(),
+                            value: attr.decode_and_unescape_value(&reader)?.into_owned(),
                         });
                     }
 
@@ -76,12 +74,8 @@ impl Node {
                 Event::Text(e) => {
                     if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {}
                     if let Some(node) = &mut current_node {
-                        if let Ok(text) = e.unescape_and_decode_with_custom_entities(
-                            reader.decoder(),
-                            &quick_xml::events::escape::unescape,
-                        ) {
-                            node.text = Some(text.into_owned());
-                        }
+                        let text = String::from_utf8_lossy(e.as_ref()).into_owned();
+                        node.text = Some(text);
                     }
                 }
                 Event::Eof => {
