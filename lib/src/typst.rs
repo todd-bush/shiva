@@ -446,7 +446,7 @@ mod test {
             disk_image_loader("test/data"),
         )?;
         let generated_result = crate::typst::Transformer::generate(&parsed)?;
-        std::fs::write("test/data/document_from_md.typ", generated_result)?;
+        std::fs::write("test/data/output/document_from_md.typ", generated_result)?;
 
         Ok(())
     }
@@ -457,7 +457,7 @@ mod test {
         let documents_bytes = Bytes::from(document);
         let parsed = crate::xml::Transformer::parse(&documents_bytes)?;
         let generated_result = crate::typst::Transformer::generate(&parsed)?;
-        std::fs::write("test/data/document_from_xml.typ", generated_result)?;
+        std::fs::write("test/data/output/document_from_xml.typ", generated_result)?;
 
         Ok(())
     }

@@ -1024,7 +1024,7 @@ mod tests {
         let parsed = Transformer::parse(&bytes)?;
         debug!("{:#?}", parsed);
         let generated = markdown::Transformer::generate(&parsed)?;
-        let mut file = File::create("test/data/generated.md")?;
+        let mut file = File::create("test/data/output/generated.md")?;
         file.write_all(&generated)?;
         Ok(())
     }
@@ -1042,7 +1042,7 @@ mod tests {
         let generated = Transformer::generate(&parsed)?;
         debug!("{:#?}", generated);
         // write to file
-        let mut file = File::create("test/data/generated.xml")?;
+        let mut file = File::create("test/data/output/generated.xml")?;
         file.write_all(&generated)?;
 
         Ok(())

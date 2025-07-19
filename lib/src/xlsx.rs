@@ -144,7 +144,7 @@ mod tests {
         let generated_data: Result<bytes::Bytes, anyhow::Error> = Transformer::generate(&parsed);
 
         let bytes_to_write = generated_data?;
-        std::fs::write("test/data/test_document.xlsx", bytes_to_write)?;
+        std::fs::write("test/data/output/test_document.xlsx", bytes_to_write)?;
 
         info!("Excel file created successfully!");
 
