@@ -401,18 +401,16 @@ pub fn generate_document(
 
     // Converting both headers and footers into a string repr of them in Typst
     let mut header_text = String::new();
-    document.get_page_header().iter().for_each(|el| match el {
-        Text { text, size: _ } => {
+    document.get_page_header().iter().for_each(|el| {
+        if let Text { text, size: _ } = el {
             header_text.push_str(text);
         }
-        _ => {}
     });
     let mut footer_text = String::new();
-    document.get_page_footer().iter().for_each(|el| match el {
-        Text { text, size: _ } => {
+    document.get_page_footer().iter().for_each(|el| {
+        if let Text { text, size: _ } = el {
             footer_text.push_str(text);
         }
-        _ => {}
     });
     let footer_header_text = format!(
         "#set page(

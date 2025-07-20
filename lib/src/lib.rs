@@ -1,7 +1,3 @@
-//!
-//#![doc = include_str!("../README.md")]
-//!
-
 pub mod core;
 
 #[cfg(feature = "text")]

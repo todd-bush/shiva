@@ -616,8 +616,8 @@ impl ImageData {
     pub fn set_image_type(&mut self, image_type_str: &str) {
         let image_type_str = image_type_str
             .split('.')
-            .last()
-            .unwrap_or("")
+            .next_back()
+            .unwrap_or_default()
             .trim()
             .to_lowercase();
 
@@ -628,7 +628,7 @@ impl ImageData {
 
         match ImageType::from_str(&image_type_str) {
             Ok(image_type) => self.image_type = image_type,
-            Err(_) => panic!("Invalid image type: {}", image_type_str),
+            Err(_) => panic!("Invalid image type: {image_type_str}"),
         }
     }
 
@@ -639,7 +639,7 @@ impl ImageData {
         }
         match ImageAlignment::from_str(alignment_str) {
             Ok(alignment) => self.align = alignment,
-            Err(_) => panic!("Invalid image alignment: {}", alignment_str),
+            Err(_) => panic!("Invalid image alignment: {alignment_str}"),
         }
     }
 
@@ -727,8 +727,8 @@ pub struct ImageDimension {
 pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes> {
     let path = path.to_string();
     let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
-        let image_path = format!("{}/{}", path, image);
-        info!("Loading image: {}", image_path);
+        let image_path = format!("{path}/{image}");
+        info!("Loading image: {image_path}");
         let bytes = std::fs::read(image_path)?;
         Ok(Bytes::from(bytes))
     };
@@ -738,7 +738,7 @@ pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes> {
 pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<()> {
     let path = path.to_string();
     let image_saver = move |bytes: &Bytes, image: &str| -> anyhow::Result<()> {
-        let image_path = format!("{}/{}", path, image);
+        let image_path = format!("{path}/{image}");
         std::fs::write(image_path, bytes)?;
         Ok(())
     };

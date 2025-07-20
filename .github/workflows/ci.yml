@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc, x86_64-apple-darwin]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: ${{ matrix.target }}
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install system dependencies
+      if: matrix.target == 'x86_64-unknown-linux-gnu'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential pkg-config libssl-dev
+
+    - name: Build lib and cli
+      run: |
+        cargo build --verbose -p shiva
+        cargo build --verbose -p cli
+
+    - name: Run tests for lib and cli
+      run: |
+        cargo test --verbose -p shiva
+        cargo test --verbose -p cli
+
+    - name: Run clippy for lib and cli
+      run: |
+        cargo clippy --verbose -p shiva -- -D warnings
+        cargo clippy --verbose -p cli -- -D warnings
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin
+
+    - name: Generate coverage report
+      run: cargo tarpaulin --out Html --output-dir coverage

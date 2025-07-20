@@ -61,7 +61,7 @@ impl TransformerTrait for Transformer {
                     });
                 }
                 Err(err) => {
-                    error!("Error reading sheet {}: {}", sheet_name, err);
+                    error!("Error reading sheet {sheet_name}: {err}");
                 }
             }
         }
@@ -79,31 +79,28 @@ impl TransformerTrait for Transformer {
             workbook: &mut WorkBook,
             sheet_index: i32,
         ) -> anyhow::Result<()> {
-            match element {
-                Table { headers, rows } => {
-                    let mut worksheet = Sheet::new("Sheet".to_string() + &sheet_index.to_string());
-                    let mut row_index = 1;
+            if let Table { headers, rows } = element {
+                let mut worksheet = Sheet::new("Sheet".to_string() + &sheet_index.to_string());
+                let mut row_index = 1;
+                let mut col_index = 0;
+                for header in headers {
+                    if let Text { text, .. } = header.element.clone() {
+                        worksheet.set_value(0, col_index, text);
+                        col_index += 1;
+                    }
+                }
+
+                for row in rows {
                     let mut col_index = 0;
-                    for header in headers {
-                        if let Text { text, .. } = header.element.clone() {
-                            worksheet.set_value(0, col_index, text);
+                    for cell in row.cells.iter() {
+                        if let Text { text, .. } = cell.element.clone() {
+                            worksheet.set_value(row_index, col_index, text);
                             col_index += 1;
                         }
                     }
-
-                    for row in rows {
-                        let mut col_index = 0;
-                        for (_cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Text { text, .. } = cell.element.clone() {
-                                worksheet.set_value(row_index, col_index, text);
-                                col_index += 1;
-                            }
-                        }
-                        row_index += 1;
-                    }
-                    workbook.push_sheet(worksheet.clone());
+                    row_index += 1;
                 }
-                _ => {}
+                workbook.push_sheet(worksheet.clone());
             }
             Ok(())
         }

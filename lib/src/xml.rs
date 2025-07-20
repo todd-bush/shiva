@@ -44,7 +44,7 @@ impl Node {
                         let attr = attr?;
                         attributes.push(Attribute {
                             key: from_utf8(attr.key.as_ref())?.to_string(),
-                            value: attr.decode_and_unescape_value(&reader)?.into_owned(),
+                            value: attr.decode_and_unescape_value(reader)?.into_owned(),
                         });
                     }
 
@@ -61,7 +61,7 @@ impl Node {
                     current_node = Some(new_node);
                 }
                 Event::End(ref e) => {
-                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {}
+                    let _ = String::from_utf8_lossy(e.as_ref()) == "end";
                     if let Some(node) = current_node.take() {
                         if let Some(mut parent) = stack.pop() {
                             parent.children.push(node);
@@ -72,7 +72,7 @@ impl Node {
                     }
                 }
                 Event::Text(e) => {
-                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {}
+                    let _ = String::from_utf8_lossy(e.as_ref()) == "end";
                     if let Some(node) = &mut current_node {
                         let text = String::from_utf8_lossy(e.as_ref()).into_owned();
                         node.text = Some(text);
@@ -94,7 +94,7 @@ pub struct Transformer;
 
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> Result<Document> {
-        let xml_data = from_utf8(&document)?;
+        let xml_data = from_utf8(document)?;
         let mut reader = Reader::from_str(xml_data);
         reader.trim_text(true);
 
@@ -111,11 +111,8 @@ impl TransformerTrait for Transformer {
         let mut elements = Vec::new();
 
         for child in element_data.unwrap().children.iter() {
-            match child.name.as_str() {
-                "elements" => {
-                    elements = parse_element(child)?;
-                }
-                _ => {}
+            if child.name.as_str() == "elements" {
+                elements = parse_element(child)?;
             }
         }
 
@@ -149,7 +146,7 @@ impl TransformerTrait for Transformer {
                         }
                         elements.push(Element::List {
                             elements: sub_elements,
-                            numbered: numbered,
+                            numbered,
                         });
                     }
                     "elements" => {
@@ -179,7 +176,7 @@ impl TransformerTrait for Transformer {
                         }
                         elements.push(Element::Text {
                             text: text.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                     "Image" => {
@@ -295,7 +292,7 @@ impl TransformerTrait for Transformer {
                             title: title.to_string(),
                             url: url.to_string(),
                             alt: alt.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                     "Header" => {
@@ -322,7 +319,7 @@ impl TransformerTrait for Transformer {
                         }
                         elements.push(Element::Header {
                             text: text.to_string(),
-                            level: level,
+                            level,
                         });
                     }
                     "Table" => {
@@ -341,30 +338,27 @@ impl TransformerTrait for Transformer {
                                                 width: 8.0,
                                             }
                                         };
-                                        match header.name.as_str() {
-                                            "TableHeader" => {
-                                                let mut text = "_";
-                                                let mut size = 10;
-                                                let mut width = 8.0;
-                                                for table_header_element in header.children.iter() {
-                                                    for table_header_element_group in
-                                                        table_header_element.children.iter()
-                                                    {
-                                                        match table_header_element_group
-                                                            .name
-                                                            .as_str()
-                                                        {
-                                                            "Text" => {
-                                                                for table_header_element_sub in
-                                                                    table_header_element_group
-                                                                        .children
-                                                                        .iter()
+                                        if header.name.as_str() == "TableHeader" {
+                                            let mut text = "_";
+                                            let mut size = 10;
+                                            let mut width = 8.0;
+                                            for table_header_element in header.children.iter() {
+                                                for table_header_element_group in
+                                                    table_header_element.children.iter()
+                                                {
+                                                    match table_header_element_group.name.as_str() {
+                                                        "Text" => {
+                                                            for table_header_element_sub in
+                                                                table_header_element_group
+                                                                    .children
+                                                                    .iter()
+                                                            {
+                                                                match table_header_element_sub
+                                                                    .name
+                                                                    .as_str()
                                                                 {
-                                                                    match
-                                                                        table_header_element_sub.name.as_str()
-                                                                    {
-                                                                        "size" => {
-                                                                            if
+                                                                    "size" => {
+                                                                        if
                                                                                 let Some(value) =
                                                                                     &table_header_element_sub.text
                                                                             {
@@ -375,9 +369,9 @@ impl TransformerTrait for Transformer {
                                                                                     "Error: No value"
                                                                                 );
                                                                             }
-                                                                        }
-                                                                        "text" => {
-                                                                            if
+                                                                    }
+                                                                    "text" => {
+                                                                        if
                                                                                 let Some(value) =
                                                                                     &table_header_element_sub.text
                                                                             {
@@ -387,35 +381,33 @@ impl TransformerTrait for Transformer {
                                                                                     "Error: No value"
                                                                                 );
                                                                             }
-                                                                        }
-                                                                        _ => {}
                                                                     }
+                                                                    _ => {}
                                                                 }
                                                             }
-                                                            "width" => {
-                                                                if let Some(value) =
-                                                                    &table_header_element_group.text
-                                                                {
-                                                                    width = value.parse()?;
-                                                                } else {
-                                                                    error!("Error: No value");
-                                                                }
-                                                            }
-                                                            _ => {}
                                                         }
+                                                        "width" => {
+                                                            if let Some(value) =
+                                                                &table_header_element_group.text
+                                                            {
+                                                                width = value.parse()?;
+                                                            } else {
+                                                                error!("Error: No value");
+                                                            }
+                                                        }
+                                                        _ => {}
                                                     }
                                                 }
-                                                header_content = TableHeader {
-                                                    element: {
-                                                        Element::Text {
-                                                            text: text.to_string(),
-                                                            size: size,
-                                                        }
-                                                    },
-                                                    width: width,
-                                                };
                                             }
-                                            _ => {}
+                                            header_content = TableHeader {
+                                                element: {
+                                                    Element::Text {
+                                                        text: text.to_string(),
+                                                        size,
+                                                    }
+                                                },
+                                                width,
+                                            };
                                         }
                                         headers.push(header_content);
                                     }
@@ -427,82 +419,66 @@ impl TransformerTrait for Transformer {
                                         for cells in table_row.children.iter() {
                                             let mut cells_content = vec![];
                                             for table_cell in cells.children.iter() {
-                                                match table_cell.name.as_str() {
-                                                    "TableCell" => {
-                                                        let mut cell_content: TableCell =
-                                                            TableCell {
-                                                                element: Element::Text {
-                                                                    text: "_".to_string(),
-                                                                    size: 10,
-                                                                },
-                                                            };
-                                                        for cell in table_cell.children.iter() {
-                                                            for cell_element_sub in
-                                                                cell.children.iter()
+                                                if table_cell.name.as_str() == "TableCell" {
+                                                    let mut cell_content: TableCell = TableCell {
+                                                        element: Element::Text {
+                                                            text: "_".to_string(),
+                                                            size: 10,
+                                                        },
+                                                    };
+                                                    for cell in table_cell.children.iter() {
+                                                        for cell_element_sub in cell.children.iter()
+                                                        {
+                                                            if cell_element_sub.name.as_str()
+                                                                == "Text"
                                                             {
-                                                                match cell_element_sub.name.as_str()
+                                                                let mut text = "_";
+                                                                let mut size = 10;
+                                                                for cell_element_item in
+                                                                    cell_element_sub.children.iter()
                                                                 {
-                                                                    "Text" => {
-                                                                        let mut text = "_";
-                                                                        let mut size = 10;
-                                                                        for cell_element_item in
-                                                                            cell_element_sub
-                                                                                .children
-                                                                                .iter()
-                                                                        {
-                                                                            match
-                                                                                cell_element_item.name.as_str()
+                                                                    match cell_element_item
+                                                                        .name
+                                                                        .as_str()
+                                                                    {
+                                                                        "size" => {
+                                                                            if let Some(value) =
+                                                                                &cell_element_item
+                                                                                    .text
                                                                             {
-                                                                                "size" => {
-                                                                                    if
-                                                                                        let Some(
-                                                                                            value,
-                                                                                        ) =
-                                                                                            &cell_element_item.text
-                                                                                    {
-                                                                                        size =
-                                                                                            value.parse()?;
-                                                                                    } else {
-                                                                                        error!(
+                                                                                size = value
+                                                                                    .parse()?;
+                                                                            } else {
+                                                                                error!(
                                                                                             "Error: No value"
                                                                                         );
-                                                                                    }
-                                                                                }
-                                                                                "text" => {
-                                                                                    if
-                                                                                        let Some(
-                                                                                            value,
-                                                                                        ) =
-                                                                                            &cell_element_item.text
-                                                                                    {
-                                                                                        text =
-                                                                                            value;
-                                                                                    } else {
-                                                                                        error!(
-                                                                                            "Error: No value"
-                                                                                        );
-                                                                                    }
-                                                                                }
-                                                                                _ => {}
                                                                             }
                                                                         }
-                                                                        cell_content = TableCell {
-                                                                            element:
-                                                                                Element::Text {
-                                                                                    text: text
-                                                                                        .to_string(
-                                                                                        ),
-                                                                                    size: size,
-                                                                                },
-                                                                        };
+                                                                        "text" => {
+                                                                            if let Some(value) =
+                                                                                &cell_element_item
+                                                                                    .text
+                                                                            {
+                                                                                text = value;
+                                                                            } else {
+                                                                                error!(
+                                                                                            "Error: No value"
+                                                                                        );
+                                                                            }
+                                                                        }
+                                                                        _ => {}
                                                                     }
-                                                                    _ => {}
                                                                 }
+                                                                cell_content = TableCell {
+                                                                    element: Element::Text {
+                                                                        text: text.to_string(),
+                                                                        size,
+                                                                    },
+                                                                };
                                                             }
                                                         }
-                                                        cells_content.push(cell_content);
                                                     }
-                                                    _ => {}
+                                                    cells_content.push(cell_content);
                                                 }
                                             }
                                             row_content = TableRow {
@@ -515,10 +491,7 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        elements.push(Element::Table {
-                            headers: headers,
-                            rows: rows,
-                        });
+                        elements.push(Element::Table { headers, rows });
                     }
                     "element" => {
                         elements = parse_element(element)?;
@@ -532,77 +505,71 @@ impl TransformerTrait for Transformer {
         fn list_parse_element(element_data: &Node) -> anyhow::Result<Vec<ListItem>> {
             let mut elements: Vec<ListItem> = vec![];
             for element in element_data.children.iter() {
-                match element.name.as_str() {
-                    "ListItem" => {
-                        for child in element.children.iter() {
-                            match child.name.as_str() {
-                                "elements" => {
-                                    for sub_child in child.children.iter() {
-                                        match sub_child.name.as_str() {
-                                            "Text" => {
-                                                let mut text = "_";
-                                                let mut size = 10;
-                                                for child in sub_child.children.iter() {
-                                                    match child.name.as_str() {
-                                                        "size" => {
-                                                            if let Some(value) = &child.text {
-                                                                size = value.parse()?;
-                                                            } else {
-                                                                error!("Error: No value");
-                                                            }
-                                                        }
-                                                        "text" => {
-                                                            if let Some(value) = &child.text {
-                                                                text = value;
-                                                            } else {
-                                                                error!("Error: No value");
-                                                            }
-                                                        }
-                                                        _ => {}
+                if element.name.as_str() == "ListItem" {
+                    for child in element.children.iter() {
+                        match child.name.as_str() {
+                            "elements" => {
+                                for sub_child in child.children.iter() {
+                                    if sub_child.name.as_str() == "Text" {
+                                        let mut text = "_";
+                                        let mut size = 10;
+                                        for child in sub_child.children.iter() {
+                                            match child.name.as_str() {
+                                                "size" => {
+                                                    if let Some(value) = &child.text {
+                                                        size = value.parse()?;
+                                                    } else {
+                                                        error!("Error: No value");
                                                     }
                                                 }
-                                                let sub_element = Element::Text {
-                                                    text: text.to_string(),
-                                                    size: size,
-                                                };
-                                                elements.push(ListItem {
-                                                    element: sub_element,
-                                                });
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                                "List" => {
-                                    let mut numbered = false;
-                                    let mut sub_elements: Vec<ListItem> = vec![];
-                                    for sub_child in child.children.iter() {
-                                        match sub_child.name.as_str() {
-                                            "elements" => {
-                                                sub_elements = list_parse_element(sub_child)?;
-                                            }
-                                            "numbered" => {
-                                                if let Some(value) = &sub_child.text {
-                                                    numbered = value == "true";
-                                                } else {
-                                                    error!("Error: No value");
+                                                "text" => {
+                                                    if let Some(value) = &child.text {
+                                                        text = value;
+                                                    } else {
+                                                        error!("Error: No value");
+                                                    }
                                                 }
+                                                _ => {}
                                             }
-                                            _ => {}
                                         }
+                                        let sub_element = Element::Text {
+                                            text: text.to_string(),
+                                            size,
+                                        };
+                                        elements.push(ListItem {
+                                            element: sub_element,
+                                        });
                                     }
-                                    elements.push(ListItem {
-                                        element: Element::List {
-                                            elements: sub_elements,
-                                            numbered: numbered,
-                                        },
-                                    });
                                 }
-                                _ => {}
                             }
+                            "List" => {
+                                let mut numbered = false;
+                                let mut sub_elements: Vec<ListItem> = vec![];
+                                for sub_child in child.children.iter() {
+                                    match sub_child.name.as_str() {
+                                        "elements" => {
+                                            sub_elements = list_parse_element(sub_child)?;
+                                        }
+                                        "numbered" => {
+                                            if let Some(value) = &sub_child.text {
+                                                numbered = value == "true";
+                                            } else {
+                                                error!("Error: No value");
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                elements.push(ListItem {
+                                    element: Element::List {
+                                        elements: sub_elements,
+                                        numbered,
+                                    },
+                                });
+                            }
+                            _ => {}
                         }
                     }
-                    _ => {}
                 }
             }
             Ok(elements)
@@ -677,7 +644,7 @@ impl TransformerTrait for Transformer {
                         }
                         page_header.push(Element::Text {
                             text: text.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                 }
@@ -706,7 +673,7 @@ impl TransformerTrait for Transformer {
                         }
                         page_footer.push(Element::Text {
                             text: text.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                 }
@@ -828,17 +795,13 @@ impl TransformerTrait for Transformer {
                     for header in headers {
                         writer.write_event(Event::Start(BytesStart::new("TableHeader")))?;
                         writer.write_event(Event::Start(BytesStart::new("element")))?;
-                        match &header.element {
-                            Element::Text { text, size } => {
-                                writer.write_event(Event::Start(BytesStart::new("Text")))?;
-                                writer.write_event(Event::Text(BytesText::new(&text)))?;
-                                writer.write_event(Event::End(BytesEnd::new("Text")))?;
-                                writer.write_event(Event::Start(BytesStart::new("Text")))?;
-                                writer
-                                    .write_event(Event::Text(BytesText::new(&size.to_string())))?;
-                                writer.write_event(Event::End(BytesEnd::new("Text")))?;
-                            }
-                            _ => {}
+                        if let Element::Text { text, size } = &header.element {
+                            writer.write_event(Event::Start(BytesStart::new("Text")))?;
+                            writer.write_event(Event::Text(BytesText::new(text)))?;
+                            writer.write_event(Event::End(BytesEnd::new("Text")))?;
+                            writer.write_event(Event::Start(BytesStart::new("Text")))?;
+                            writer.write_event(Event::Text(BytesText::new(&size.to_string())))?;
+                            writer.write_event(Event::End(BytesEnd::new("Text")))?;
                         }
                         writer.write_event(Event::End(BytesEnd::new("element")))?;
                         writer.write_event(Event::Start(BytesStart::new("width")))?;
@@ -853,35 +816,21 @@ impl TransformerTrait for Transformer {
                         writer.write_event(Event::Start(BytesStart::new("TableRow")))?;
                         writer.write_event(Event::Start(BytesStart::new("cells")))?;
                         for cell in &row.cells {
-                            match cell {
-                                TableCell { element } => {
-                                    writer
-                                        .write_event(Event::Start(BytesStart::new("TableCell")))?;
-                                    writer.write_event(Event::Start(BytesStart::new("element")))?;
-                                    match &element {
-                                        Element::Text { text, size } => {
-                                            writer.write_event(Event::Start(BytesStart::new(
-                                                "Text",
-                                            )))?;
-                                            writer
-                                                .write_event(Event::Text(BytesText::new(&text)))?;
-                                            writer
-                                                .write_event(Event::End(BytesEnd::new("Text")))?;
-                                            writer.write_event(Event::Start(BytesStart::new(
-                                                "Text",
-                                            )))?;
-                                            writer.write_event(Event::Text(BytesText::new(
-                                                &size.to_string(),
-                                            )))?;
-                                            writer
-                                                .write_event(Event::End(BytesEnd::new("Text")))?;
-                                        }
-                                        _ => {}
-                                    }
-                                    writer.write_event(Event::End(BytesEnd::new("element")))?;
-                                    writer.write_event(Event::End(BytesEnd::new("TableCell")))?;
-                                }
+                            let TableCell { element } = cell;
+                            writer.write_event(Event::Start(BytesStart::new("TableCell")))?;
+                            writer.write_event(Event::Start(BytesStart::new("element")))?;
+                            if let Element::Text { text, size } = &element {
+                                writer.write_event(Event::Start(BytesStart::new("Text")))?;
+                                writer.write_event(Event::Text(BytesText::new(text)))?;
+                                writer.write_event(Event::End(BytesEnd::new("Text")))?;
+                                writer.write_event(Event::Start(BytesStart::new("Text")))?;
+                                writer
+                                    .write_event(Event::Text(BytesText::new(&size.to_string())))?;
+                                writer.write_event(Event::End(BytesEnd::new("Text")))?;
                             }
+
+                            writer.write_event(Event::End(BytesEnd::new("element")))?;
+                            writer.write_event(Event::End(BytesEnd::new("TableCell")))?;
                         }
                         writer.write_event(Event::End(BytesEnd::new("cells")))?;
                         writer.write_event(Event::End(BytesEnd::new("TableRow")))?;
@@ -897,15 +846,12 @@ impl TransformerTrait for Transformer {
             element: &ListItem,
             writer: &mut Writer<&mut Vec<u8>>,
         ) -> Result<()> {
-            match element {
-                ListItem { element } => {
-                    writer.write_event(Event::Start(BytesStart::new("ListItem")))?;
-                    writer.write_event(Event::Start(BytesStart::new("element")))?;
-                    serialize_element(element, writer)?;
-                    writer.write_event(Event::End(BytesEnd::new("element")))?;
-                    writer.write_event(Event::End(BytesEnd::new("ListItem")))?;
-                }
-            }
+            let ListItem { element } = element;
+            writer.write_event(Event::Start(BytesStart::new("ListItem")))?;
+            writer.write_event(Event::Start(BytesStart::new("element")))?;
+            serialize_element(element, writer)?;
+            writer.write_event(Event::End(BytesEnd::new("element")))?;
+            writer.write_event(Event::End(BytesEnd::new("ListItem")))?;
             Ok(())
         }
 
@@ -963,36 +909,30 @@ impl TransformerTrait for Transformer {
 
         writer.write_event(Event::Start(BytesStart::new("page_header")))?;
         for page_header_element in document.get_page_header().iter() {
-            match page_header_element {
-                Element::Text { text, size } => {
-                    writer.write_event(Event::Start(BytesStart::new("Text")))?;
-                    writer.write_event(Event::Start(BytesStart::new("text")))?;
-                    writer.write_event(Event::Text(BytesText::new(text)))?;
-                    writer.write_event(Event::End(BytesEnd::new("text")))?;
-                    writer.write_event(Event::Start(BytesStart::new("size")))?;
-                    writer.write_event(Event::Text(BytesText::new(&size.to_string())))?;
-                    writer.write_event(Event::End(BytesEnd::new("size")))?;
-                    writer.write_event(Event::End(BytesEnd::new("Text")))?;
-                }
-                _ => {}
+            if let Element::Text { text, size } = page_header_element {
+                writer.write_event(Event::Start(BytesStart::new("Text")))?;
+                writer.write_event(Event::Start(BytesStart::new("text")))?;
+                writer.write_event(Event::Text(BytesText::new(text)))?;
+                writer.write_event(Event::End(BytesEnd::new("text")))?;
+                writer.write_event(Event::Start(BytesStart::new("size")))?;
+                writer.write_event(Event::Text(BytesText::new(&size.to_string())))?;
+                writer.write_event(Event::End(BytesEnd::new("size")))?;
+                writer.write_event(Event::End(BytesEnd::new("Text")))?;
             }
         }
         writer.write_event(Event::End(BytesEnd::new("page_header")))?;
 
         writer.write_event(Event::Start(BytesStart::new("page_footer")))?;
         for page_footer_element in document.get_page_footer().iter() {
-            match page_footer_element {
-                Element::Text { text, size } => {
-                    writer.write_event(Event::Start(BytesStart::new("Text")))?;
-                    writer.write_event(Event::Start(BytesStart::new("text")))?;
-                    writer.write_event(Event::Text(BytesText::new(text)))?;
-                    writer.write_event(Event::End(BytesEnd::new("text")))?;
-                    writer.write_event(Event::Start(BytesStart::new("size")))?;
-                    writer.write_event(Event::Text(BytesText::new(&size.to_string())))?;
-                    writer.write_event(Event::End(BytesEnd::new("size")))?;
-                    writer.write_event(Event::End(BytesEnd::new("Text")))?;
-                }
-                _ => {}
+            if let Element::Text { text, size } = page_footer_element {
+                writer.write_event(Event::Start(BytesStart::new("Text")))?;
+                writer.write_event(Event::Start(BytesStart::new("text")))?;
+                writer.write_event(Event::Text(BytesText::new(text)))?;
+                writer.write_event(Event::End(BytesEnd::new("text")))?;
+                writer.write_event(Event::Start(BytesStart::new("size")))?;
+                writer.write_event(Event::Text(BytesText::new(&size.to_string())))?;
+                writer.write_event(Event::End(BytesEnd::new("size")))?;
+                writer.write_event(Event::End(BytesEnd::new("Text")))?;
             }
         }
         writer.write_event(Event::End(BytesEnd::new("page_footer")))?;

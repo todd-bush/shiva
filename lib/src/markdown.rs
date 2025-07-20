@@ -32,7 +32,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
     {
         fn create_element_list(children: Option<Vec<ListItem>>, numbered: bool) -> Element {
             Element::List {
-                elements: children.unwrap_or(vec![]),
+                elements: children.unwrap_or_default(),
                 numbered,
             }
         }
@@ -43,8 +43,8 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             list_depth: &mut i32,
         ) {
             match current_element.as_mut() {
-                Some(element) => match element {
-                    Element::List { elements, numbered } => {
+                Some(element) => {
+                    if let Element::List { elements, numbered } = element {
                         let mut list_elements = elements;
 
                         for _ in 1..*list_depth {
@@ -61,10 +61,11 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                         }
                         match &new_el {
                             Element::Hyperlink { .. } | Element::Header { .. } => {
-                                if let Some(ListItem { element }) = list_elements.last() {
-                                    if let Text { .. } = element {
-                                        list_elements.pop();
-                                    }
+                                if let Some(ListItem {
+                                    element: Text { .. },
+                                }) = list_elements.last()
+                                {
+                                    list_elements.pop();
                                 }
                             }
 
@@ -92,8 +93,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                         let li = ListItem { element: new_el };
                         list_elements.push(li);
                     }
-                    _ => {}
-                },
+                }
                 None => {
                     *current_element = Some(new_el);
                 }
@@ -279,55 +279,52 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                             _ => {}
                         }
                     }
-                    match table_element {
-                        Some(ref mut t_el) => {
-                            if let (is_header, Element::Table { headers, rows }) = t_el {
-                                if *is_header {
-                                    headers.push(TableHeader {
-                                        element: Text {
-                                            text: text.to_string(),
-                                            size: 14,
-                                        },
-                                        width: 30.,
-                                    })
-                                } else {
-                                    let last_row = rows.last_mut();
+                    if let Some((is_header, Element::Table { headers, rows })) =
+                        table_element.as_mut()
+                    {
+                        if *is_header {
+                            headers.push(TableHeader {
+                                element: Text {
+                                    text: text.to_string(),
+                                    size: 14,
+                                },
+                                width: 30.,
+                            })
+                        } else {
+                            let last_row = rows.last_mut();
 
-                                    match last_row {
-                                        Some(tr) => {
-                                            if tr.cells.len() == headers.len() {
-                                                rows.push(TableRow {
-                                                    cells: vec![TableCell {
-                                                        element: Text {
-                                                            text: text.to_string(),
-                                                            size: 14,
-                                                        },
-                                                    }],
-                                                });
-                                            } else {
-                                                tr.cells.push(TableCell {
-                                                    element: Text {
-                                                        text: text.to_string(),
-                                                        size: 14,
-                                                    },
-                                                });
-                                            }
-                                        }
-                                        None => {
-                                            rows.push(TableRow {
-                                                cells: vec![TableCell {
-                                                    element: Text {
-                                                        text: text.to_string(),
-                                                        size: 14,
-                                                    },
-                                                }],
-                                            });
-                                        }
+                            match last_row {
+                                Some(tr) => {
+                                    if tr.cells.len() == headers.len() {
+                                        rows.push(TableRow {
+                                            cells: vec![TableCell {
+                                                element: Text {
+                                                    text: text.to_string(),
+                                                    size: 14,
+                                                },
+                                            }],
+                                        });
+                                    } else {
+                                        tr.cells.push(TableCell {
+                                            element: Text {
+                                                text: text.to_string(),
+                                                size: 14,
+                                            },
+                                        });
                                     }
+                                }
+                                None => {
+                                    rows.push(TableRow {
+                                        cells: vec![TableCell {
+                                            element: Text {
+                                                text: text.to_string(),
+                                                size: 14,
+                                            },
+                                        }],
+                                    });
                                 }
                             }
                         }
-                        None => {}
                     }
                 }
                 Event::End(tag) => match tag {
@@ -504,7 +501,7 @@ where
         Element::Header { level, text } => {
             let heading = arena.alloc(Node::new(RefCell::new(Ast::new(
                 NodeValue::Heading(NodeHeading {
-                    level: *level as u8,
+                    level: *level,
                     setext: false,
                 }),
                 LineColumn { line: 0, column: 0 },
@@ -578,7 +575,7 @@ where
         Element::Image(image_data) => {
             *image_num.borrow_mut() += 1;
             let image_extension = image_data.image_type().to_extension();
-            let image_filename = format!("image{}{}", image_num.borrow(), image_extension);
+            let image_filename = format!("image{}{image_extension}", image_num.borrow());
 
             (image_saver.function)(image_data.bytes(), &image_filename)?;
 

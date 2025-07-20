@@ -56,10 +56,8 @@ impl TransformerTrait for Transformer {
                 .clone(),
         )?;
         // Извлекаем заголовки и нижние колонтитулы страницы
-        let page_header =
-            parse_elements(&root.get("page_header").unwrap_or(&Value::Array(vec![])))?;
-        let page_footer =
-            parse_elements(&root.get("page_footer").unwrap_or(&Value::Array(vec![])))?;
+        let page_header = parse_elements(root.get("page_header").unwrap_or(&Value::Array(vec![])))?;
+        let page_footer = parse_elements(root.get("page_footer").unwrap_or(&Value::Array(vec![])))?;
 
         let page_custom_format = PageFormat::Custom(PageDimensions {
             page_width,

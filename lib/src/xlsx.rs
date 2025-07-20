@@ -58,7 +58,7 @@ impl TransformerTrait for Transformer {
                     });
                 }
                 Err(err) => {
-                    error!("Error reading sheet {}: {}", sheet_name, err);
+                    error!("Error reading sheet {sheet_name}: {err}");
                 }
             }
         }

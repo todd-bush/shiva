@@ -62,11 +62,11 @@ impl TransformerTrait for Transformer {
                     if let Element::Text { .. } = element.element {
                         *counter += 1;
                     }
-                    format!("{}. ", counter)
+                    format!("{counter}. ")
                 } else {
                     "- ".to_string()
                 };
-                debug!("list depth: {}", list_depth);
+                debug!("list depth: {list_depth}");
                 markdown.push_str(&"  ".repeat(list_depth - 1));
                 if let Element::Text { .. } = element.element {
                     markdown.push_str(&prefix);
@@ -140,17 +140,12 @@ impl TransformerTrait for Transformer {
                     if url == alt {
                         markdown.push_str(&url.to_string());
                     } else {
-                        markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
+                        markdown.push_str(&format!("[{title}]({url} \"{alt}\")"));
                     }
                 }
                 Image(image) => {
-                    let image_path = format!("image{}.png", image_num);
-                    markdown.push_str(&format!(
-                        "![{}]({} \"{}\")",
-                        image.alt(),
-                        image_path,
-                        image.title()
-                    ));
+                    let image_path = format!("image{image_num}.png");
+                    markdown.push_str(&format!("![{}]", image.alt()));
                     images.insert(image_path.to_string(), image.bytes().clone());
                     *image_num += 1;
                 }
