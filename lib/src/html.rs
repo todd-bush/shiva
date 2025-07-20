@@ -48,19 +48,17 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
 
         //TODO: Is this needed? Commented out for now! header_text and footer_text are not read anywhere
         let mut header_text = String::new();
-        document.get_page_header().iter().for_each(|el| match el {
-            Text { text, size: _ } => {
+        document.get_page_header().iter().for_each(|el| {
+            if let Text { text, size: _ } = el {
                 header_text.push_str(text);
             }
-            _ => {}
         });
         let mut footer_text = String::new();
 
-        document.get_page_footer().iter().for_each(|el| match el {
-            Text { text, size: _ } => {
+        document.get_page_footer().iter().for_each(|el| {
+            if let Text { text, size: _ } = el {
                 footer_text.push_str(text);
             }
-            _ => {}
         });
 
         html.push_str("<!DOCTYPE html>\n<html>\n<body>\n");
@@ -70,10 +68,10 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         for element in &all_elements {
             match element {
                 Element::Header { level, text } => {
-                    html.push_str(&format!("<h{}>{}</h{}>\n", level, text, level));
+                    html.push_str(&format!("<h{level}>{text}</h{level}>\n"));
                 }
                 Element::Text { text, size: _ } => {
-                    html.push_str(&format!("<p>{}</p>\n", text));
+                    html.push_str(&format!("<p>{text}</p>\n"));
                 }
                 Paragraph { elements } => {
                     html.push_str("<p>");
