@@ -121,17 +121,14 @@ impl TransformerTrait for Transformer {
         fn extract_text(doc_element: &docx_rs::Paragraph) -> String {
             let mut result = "".to_string();
             for c in &doc_element.children {
-                match c {
-                    docx_rs::ParagraphChild::Run(run) => {
-                        if run.children.is_empty() {
-                            result.push_str("");
-                            return result;
-                        }
-                        if let RunChild::Text(t) = &run.children[0] {
-                            result.push_str(&t.text);
-                        }
+                if let docx_rs::ParagraphChild::Run(run) = c {
+                    if run.children.is_empty() {
+                        result.push_str("");
+                        return result;
                     }
-                    _ => {}
+                    if let RunChild::Text(t) = &run.children[0] {
+                        result.push_str(&t.text);
+                    }
                 }
             }
 
@@ -295,36 +292,28 @@ impl TransformerTrait for Transformer {
                         numbered: is_list_numbered,
                     });
                 }
-                match ch {
-                    docx_rs::DocumentChild::Table(table) => {
-                        let mut rows = vec![];
-                        for row in &table.rows {
-                            let docx_rs::TableChild::TableRow(tr) = row;
-                            let mut cells = TableRow { cells: vec![] };
-
-                            for table_cell in &tr.cells {
-                                let TableRowChild::TableCell(tc) = table_cell;
-                                for ch in &tc.children {
-                                    match ch {
-                                        docx_rs::TableCellContent::Paragraph(par) => {
-                                            let text = extract_text(par);
-                                            cells.cells.push(TableCell {
-                                                element: Element::Text { text, size: 16 },
-                                            });
-                                        }
-                                        _ => {}
-                                    }
+                if let docx_rs::DocumentChild::Table(table) = ch {
+                    let mut rows = vec![];
+                    for row in &table.rows {
+                        let docx_rs::TableChild::TableRow(tr) = row;
+                        let mut cells = TableRow { cells: vec![] };
+                        for table_cell in &tr.cells {
+                            let TableRowChild::TableCell(tc) = table_cell;
+                            for ch in &tc.children {
+                                if let docx_rs::TableCellContent::Paragraph(par) = ch {
+                                    let text = extract_text(par);
+                                    cells.cells.push(TableCell {
+                                        element: Element::Text { text, size: 16 },
+                                    });
                                 }
                             }
-                            rows.push(cells);
                         }
-
-                        result.push(Element::Table {
-                            headers: vec![],
-                            rows,
-                        });
+                        rows.push(cells);
                     }
-                    _ => {}
+                    result.push(Element::Table {
+                        headers: vec![],
+                        rows,
+                    });
                 }
             }
         }
@@ -444,18 +433,16 @@ impl TransformerTrait for Transformer {
                 Element::Image(image) => {
                     let mut pic = Pic::new(image.bytes());
 
-                    match &image.size() {
-                        &ImageDimension {
-                            width: Some(width),
-                            height: Some(height),
-                        } => {
-                            let width = width.parse().unwrap_or(0);
-                            let height = height.parse().unwrap_or(0);
-                            if width > 0 && height > 0 {
-                                pic = pic.size(width, height);
-                            }
+                    if let &ImageDimension {
+                        width: Some(width),
+                        height: Some(height),
+                    } = &image.size()
+                    {
+                        let width = width.parse().unwrap_or(0);
+                        let height = height.parse().unwrap_or(0);
+                        if width > 0 && height > 0 {
+                            pic = pic.size(width, height);
                         }
-                        _ => {}
                     }
 
                     pic = re_size_picture(pic);
