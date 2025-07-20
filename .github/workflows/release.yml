@@ -36,13 +36,13 @@ jobs:
 
     - name: Build lib and cli
       run: |
-        cargo build --release --verbose --all-features -p shiva
-        cargo build --release --verbose --all-features -p shiva-cli
+        cargo build --release --verbose -p shiva
+        cargo build --release --verbose -p shiva-cli
 
     - name: Run tests for lib and cli
       run: |
-        cargo test --release --verbose --all-features -p shiva
-        cargo test --release --verbose --all-features -p shiva-cli
+        cargo test --release --verbose -p shiva
+        cargo test --release --verbose -p shiva-cli
 
     - name: Create release assets
       run: |
