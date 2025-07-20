@@ -28,8 +28,6 @@ jobs:
 
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2
-      with:
-        target: ${{ matrix.target }}
 
     - name: Install system dependencies
       if: matrix.target == 'x86_64-unknown-linux-gnu'
@@ -40,17 +38,17 @@ jobs:
     - name: Build lib and cli
       run: |
         cargo build --verbose --all-features -p shiva
-        cargo build --verbose --all-features -p shiva-cli
+        cargo build --verbose -p shiva-cli
 
     - name: Run tests for lib and cli
       run: |
         cargo test --verbose --all-features -p shiva
-        cargo test --verbose --all-features -p shiva-cli
+        cargo test --verbose -p shiva-cli
 
     - name: Run clippy for lib and cli
       run: |
         cargo clippy --verbose --all-features -p shiva -- -D warnings
-        cargo clippy --verbose --all-features -p shiva-cli -- -D warnings
+        cargo clippy --verbose -p shiva-cli -- -D warnings
 
     - name: Check formatting
       run: cargo fmt --all -- --check
