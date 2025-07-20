@@ -37,18 +37,18 @@ jobs:
 
     - name: Build lib and cli
       run: |
-        cargo build --verbose --all-features -p shiva
-        cargo build --verbose -p shiva-cli
+        cargo build --verbose -p shiva
+        cargo build --verbose -p cli
 
     - name: Run tests for lib and cli
       run: |
-        cargo test --verbose --all-features -p shiva
-        cargo test --verbose -p shiva-cli
+        cargo test --verbose -p shiva
+        cargo test --verbose -p cli
 
     - name: Run clippy for lib and cli
       run: |
-        cargo clippy --verbose --all-features -p shiva -- -D warnings
-        cargo clippy --verbose -p shiva-cli -- -D warnings
+        cargo clippy --verbose -p shiva -- -D warnings
+        cargo clippy --verbose -p cli -- -D warnings
 
     - name: Check formatting
       run: cargo fmt --all -- --check
