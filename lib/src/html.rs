@@ -109,7 +109,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                 &image_saver,
                             )?;
 
-                            table_html.push_str(&format!("<th>{}</th>\n", header_html));
+                            table_html.push_str(&format!("<th>{header_html}</th>\n"));
                         }
 
                         table_html.push_str("</tr>\n");
@@ -124,7 +124,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                 &image_saver,
                             )?;
 
-                            table_html.push_str(&format!("<td>{}</td>\n", cell_html));
+                            table_html.push_str(&format!("<td>{cell_html}</td>\n"));
                         }
 
                         table_html.push_str("</tr>\n");
@@ -358,30 +358,26 @@ fn generate_html_for_element(
             paragraph_html.push_str("</p>");
             Ok(paragraph_html)
         }
-        Header { level, text } => Ok(format!(
-            "<h{level}>{text}</h{level}>",
-            level = level,
-            text = text
-        )),
+        Header { level, text } => Ok(format!("<h{level}>{text}</h{level}>")),
         List { elements, numbered } => {
             let tag = if *numbered { "ol" } else { "ul" };
-            let mut list_html = format!("<{}>", tag);
+            let mut list_html = format!("<{tag}>");
             list_html.push('\n');
             for item in elements {
                 let item_html = generate_html_for_element(&item.element, image_num, image_saver)?;
                 if let List { .. } = item.element {
                     list_html.push_str(&item_html.to_string());
                 } else {
-                    list_html.push_str(&format!("<li>{}</li>", item_html));
+                    list_html.push_str(&format!("<li>{item_html}</li>"));
                     list_html.push('\n');
                 }
             }
-            list_html.push_str(&format!("</{}>", tag));
+            list_html.push_str(&format!("</{tag}>"));
             list_html.push('\n');
             Ok(list_html)
         }
         Image(image) => {
-            let image_path = format!("image{}.png", image_num);
+            let image_path = format!("image{image_num}.png");
             // images.insert(image_path.to_string(), bytes.clone());
             (image_saver.function)(image.bytes(), &image_path)?;
             *image_num += 1;
@@ -392,30 +388,23 @@ fn generate_html_for_element(
             };
 
             let width_str = match &image.size().width {
-                Some(width) => format!(" width=\"{}\"", width),
+                Some(width) => format!(" width=\"{width}\""),
                 None => String::new(),
             };
 
             let height_str = match &image.size().height {
-                Some(height) => format!(" height=\"{}\"", height),
+                Some(height) => format!(" height=\"{height}\""),
                 None => String::new(),
             };
             Ok(format!(
-                "<img src=\"{}\" alt=\"{}\" title=\"{}\"{}{}{} />",
-                image_path,
+                "<img src=\"{image_path}\" alt=\"{}\" title=\"{}\"{align_str}{width_str}{height_str} />",
                 image.alt(),
-                image.title(),
-                align_str,
-                width_str,
-                height_str
+                image.title()
             ))
         }
         Hyperlink {
             title, url, alt, ..
-        } => Ok(format!(
-            "<a href=\"{}\" title=\"{}\">{}</a>",
-            url, alt, title
-        )),
+        } => Ok(format!("<a href=\"{url}\" title=\"{alt}\">{title}</a>")),
         _ => Ok("".to_string()),
     }
 }

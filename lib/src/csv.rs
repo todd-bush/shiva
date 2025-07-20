@@ -7,7 +7,6 @@ use bytes::Bytes;
 pub struct Transformer;
 
 #[allow(unused)]
-
 impl TransformerTrait for Transformer {
     /// Parses CSV data from a `Bytes` object and converts it into a structured `Document`.
     /// This function is used to interpret CSV data, typically transforming it into a format

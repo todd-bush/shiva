@@ -55,7 +55,7 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
             } else {
                 // Add the "-" character at the beginning of the text, taking into account the nesting level
                 let indent = " ".repeat(depth * 4); // 4 spaces for each nesting level
-                let modified_text = format!("{}- {}", indent, text);
+                let modified_text = format!("{indent}- {text}");
                 paragraph = Paragraph::new()
                     .add_run(Run::new().add_text(modified_text).size(*size as usize * 2));
             }
@@ -91,7 +91,7 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
                     hyperlink_paragraph.numbering(NumberingId::new(2), IndentLevel::new(depth));
             } else {
                 let indent = " ".repeat(depth * 4);
-                let modified_title = format!("{}- {}", indent, title);
+                let modified_title = format!("{indent}- {title}");
                 hyperlink_paragraph = Paragraph::new()
                     .add_run(Run::new().add_text(modified_title).size(*size as usize * 2));
             }
@@ -135,7 +135,7 @@ impl TransformerTrait for Transformer {
                 }
             }
 
-            return result;
+            result
         }
 
         let docx = read_docx(document)?;
@@ -442,7 +442,7 @@ impl TransformerTrait for Transformer {
                 }
 
                 Element::Image(image) => {
-                    let mut pic = Pic::new(&image.bytes());
+                    let mut pic = Pic::new(image.bytes());
 
                     match &image.size() {
                         &ImageDimension {

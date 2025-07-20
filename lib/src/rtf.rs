@@ -72,11 +72,11 @@ fn detect_element_in_list(
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(".");
-                format!("{}{}. {}", indent, numbering, text)
+                format!("{indent}{numbering}. {text}")
             } else {
-                format!("{}- {}", indent, text)
+                format!("{indent}- {text}")
             };
-            rtf_content.push_str(&format!("{{\\fs{} {}}} ", *size as i32 * 2, modified_text));
+            rtf_content.push_str(&format!("{{\\fs{} {modified_text}}} ", *size as i32 * 2));
             rtf_content.push_str("\\par ");
         }
 
@@ -89,13 +89,12 @@ fn detect_element_in_list(
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(".");
-                format!("{}. {} ", numbering, text)
+                format!("{numbering}. {text} ")
             } else {
-                format!("{}- {}", indent, text)
+                format!("{indent}- {text}")
             };
             rtf_content.push_str(&format!(
-                "{{\\fs{}\\b {} \\b0}}\\par ",
-                header_size, modified_text
+                "{{\\fs{header_size}\\b {modified_text} \\b0}}\\par "
             ));
         }
 
@@ -107,13 +106,12 @@ fn detect_element_in_list(
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(".");
-                format!("{}{}. {}", indent, numbering, title)
+                format!("{indent}{numbering}. {title}")
             } else {
-                format!("{}- {}", indent, title)
+                format!("{indent}- {title}")
             };
             rtf_content.push_str(&format!(
-                "{{\\field{{\\*\\fldinst HYPERLINK \"{}\" }}{{\\fldrslt {{\\ul\\cf1 {}}}}}}}",
-                url, modified_title
+                "{{\\field{{\\*\\fldinst HYPERLINK \"{url}\" }}{{\\fldrslt {{\\ul\\cf1 {modified_title}}}}}}}"
             ));
             rtf_content.push_str("\\par ");
         }
@@ -123,7 +121,7 @@ fn detect_element_in_list(
             let image_size = re_size_picture(image_bytes);
             let image = image_bytes
                 .iter()
-                .map(|b| format!("{:02X}", b))
+                .map(|b| format!("{b:02X}"))
                 .collect::<String>();
 
             let indent = " ".repeat(depth * 4);
@@ -133,16 +131,16 @@ fn detect_element_in_list(
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(".");
-                format!("{}{}. {}", indent, numbering, "Image")
+                format!("{indent}{numbering}. Image")
             } else {
-                format!("{}- Image", indent)
+                format!("{indent}- Image")
             };
 
-            rtf_content.push_str(&format!("{{\\fs24 {}}}\\par ", modified_image_caption));
+            rtf_content.push_str(&format!("{{\\fs24 {modified_image_caption}}}\\par "));
 
             rtf_content.push_str(&format!(
-                "{{{{\\pict\\jpegblip\\picwgoal{}\\pichgoal{} {} }}}}",
-                image_size.output_width, image_size.output_height, image
+                "{{{{\\pict\\jpegblip\\picwgoal{}\\pichgoal{} {image} }}}}",
+                image_size.output_width, image_size.output_height
             ));
             rtf_content.push_str("\\par ");
         }
@@ -169,7 +167,7 @@ fn detect_element_in_list(
         }
 
         _ => {
-            warn!("Unknown element in list: {:?}", element);
+            warn!("Unknown element in list: {element:?}");
         }
     }
 }
@@ -177,7 +175,7 @@ fn detect_element_in_list(
 impl TransformerTrait for Transformer {
     fn parse(document: &bytes::Bytes) -> anyhow::Result<Document> {
         let data_str = std::str::from_utf8(document).unwrap();
-        let tokens = Lexer::scan(&data_str).unwrap();
+        let tokens = Lexer::scan(data_str).unwrap();
 
         // keeping the document in a box since it might contain huge data and also
         // for easy manipulation
@@ -185,9 +183,9 @@ impl TransformerTrait for Transformer {
         // initializing header levels
         let mut level = 1;
         for styleblock in Parser::new(tokens).parse().unwrap().body.as_slice() {
-            if styleblock.painter.font_size >= 30 && styleblock.painter.bold == true {
+            if styleblock.painter.font_size >= 30 && styleblock.painter.bold {
                 document.add_element(Element::Header {
-                    level: level,
+                    level,
                     text: styleblock.text.to_owned(),
                 });
                 level += 1
@@ -216,18 +214,17 @@ impl TransformerTrait for Transformer {
                     let header_size = 30 + (level);
 
                     //formatting the string RTF
-                    rtf_content
-                        .push_str(&format!("{{\\fs{}\\b {} \\b0}}\\par ", header_size, text));
+                    rtf_content.push_str(&format!("{{\\fs{header_size}\\b {text} \\b0}}\\par "));
                 }
 
                 Element::Text { text, size } => {
-                    rtf_content.push_str(&format!("{{\\fs{} {}}} ", *size as i32 * 2, text));
+                    rtf_content.push_str(&format!("{{\\fs{} {text}}} ", *size as i32 * 2));
                 }
 
                 Element::Paragraph { elements } => {
                     for elem in elements {
                         if let Element::Text { text, size } = elem {
-                            rtf_content.push_str(&format!("{{\\fs{} {}}}", *size as i32 * 2, text));
+                            rtf_content.push_str(&format!("{{\\fs{} {text}}}", *size as i32 * 2));
                         }
                     }
                     rtf_content.push_str("\\par ");
@@ -268,9 +265,7 @@ impl TransformerTrait for Transformer {
                     size: _,
                 } => {
                     rtf_content.push_str(&format!(
-                        "{{\\field{{\\*\\fldinst HYPERLINK \"{}\" }}{{\\fldrslt {{\\ul\\cf1 {}}}}}}}",
-                        url,
-                        title
+                        "{{\\field{{\\*\\fldinst HYPERLINK \"{url}\" }}{{\\fldrslt {{\\ul\\cf1 {title}}}}}}}"
                     ));
                     rtf_content.push_str("\\par ");
                 }
@@ -282,12 +277,14 @@ impl TransformerTrait for Transformer {
 
                     let image = image_bytes
                         .iter()
-                        .map(|b| format!("{:02X}", b))
+                        .map(|b| format!("{b:02X}"))
                         .collect::<String>();
 
+                    let image_width = image_size.output_width;
+                    let image_height = image_size.output_height;
+
                     rtf_content.push_str(&format!(
-                        "{{{{\\pict\\jpegblip\\picwgoal{}\\pichgoal{} {} }}}}",
-                        image_size.output_width, image_size.output_height, image
+                        "{{{{\\pict\\jpegblip\\picwgoal{image_width}\\pichgoal{image_height} {image} }}}}"
                     ));
                     rtf_content.push_str("\\par ");
                 }
@@ -297,10 +294,10 @@ impl TransformerTrait for Transformer {
                     let mut current_x = 0;
 
                     rtf_content.push_str("\\trowd\\trgaph108\\trleft-108");
-                    for (_, width) in column_widths.iter().enumerate() {
+                    for width in column_widths.iter() {
                         current_x += width;
                         rtf_content.push_str("\\clbrdrt\\brdrs\\brdrw10\\clbrdrl\\brdrs\\brdrw10\\clbrdrb\\brdrs\\brdrw10\\clbrdrr\\brdrs\\brdrw10");
-                        rtf_content.push_str(&format!("\\cellx{}", current_x));
+                        rtf_content.push_str(&format!("\\cellx{current_x}"));
                     }
                     rtf_content.push_str("\\intbl");
 
@@ -331,13 +328,13 @@ impl TransformerTrait for Transformer {
             }
         }
 
-        rtf_content.push_str("}");
+        rtf_content.push('}');
 
         Ok(bytes::Bytes::from(rtf_content.into_bytes()))
     }
 }
 
-fn calculate_column_widths(headers: &Vec<TableHeader>, rows: &Vec<TableRow>) -> Vec<i32> {
+fn calculate_column_widths(headers: &[TableHeader], rows: &[TableRow]) -> Vec<i32> {
     let max_width = 9700;
     let mut column_widths: Vec<i32> = headers.iter().map(|_| 0).collect();
     let mut column_content_lengths: Vec<usize> = headers.iter().map(|_| 0).collect();

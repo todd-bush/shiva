@@ -44,7 +44,7 @@ impl Node {
                         let attr = attr?;
                         attributes.push(Attribute {
                             key: from_utf8(attr.key.as_ref())?.to_string(),
-                            value: attr.decode_and_unescape_value(&reader)?.into_owned(),
+                            value: attr.decode_and_unescape_value(reader)?.into_owned(),
                         });
                     }
 
@@ -61,7 +61,7 @@ impl Node {
                     current_node = Some(new_node);
                 }
                 Event::End(ref e) => {
-                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {}
+                    String::from_utf8_lossy(e.as_ref()) == "end";
                     if let Some(node) = current_node.take() {
                         if let Some(mut parent) = stack.pop() {
                             parent.children.push(node);
@@ -72,7 +72,7 @@ impl Node {
                     }
                 }
                 Event::Text(e) => {
-                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {}
+                    String::from_utf8_lossy(e.as_ref()) == "end";
                     if let Some(node) = &mut current_node {
                         let text = String::from_utf8_lossy(e.as_ref()).into_owned();
                         node.text = Some(text);
@@ -94,7 +94,7 @@ pub struct Transformer;
 
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> Result<Document> {
-        let xml_data = from_utf8(&document)?;
+        let xml_data = from_utf8(document)?;
         let mut reader = Reader::from_str(xml_data);
         reader.trim_text(true);
 
@@ -149,7 +149,7 @@ impl TransformerTrait for Transformer {
                         }
                         elements.push(Element::List {
                             elements: sub_elements,
-                            numbered: numbered,
+                            numbered,
                         });
                     }
                     "elements" => {
@@ -179,7 +179,7 @@ impl TransformerTrait for Transformer {
                         }
                         elements.push(Element::Text {
                             text: text.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                     "Image" => {
@@ -322,7 +322,7 @@ impl TransformerTrait for Transformer {
                         }
                         elements.push(Element::Header {
                             text: text.to_string(),
-                            level: level,
+                            level,
                         });
                     }
                     "Table" => {
@@ -409,10 +409,10 @@ impl TransformerTrait for Transformer {
                                                     element: {
                                                         Element::Text {
                                                             text: text.to_string(),
-                                                            size: size,
+                                                            size,
                                                         }
                                                     },
-                                                    width: width,
+                                                    width,
                                                 };
                                             }
                                             _ => {}
@@ -492,7 +492,7 @@ impl TransformerTrait for Transformer {
                                                                                     text: text
                                                                                         .to_string(
                                                                                         ),
-                                                                                    size: size,
+                                                                                    size,
                                                                                 },
                                                                         };
                                                                     }
@@ -563,7 +563,7 @@ impl TransformerTrait for Transformer {
                                                 }
                                                 let sub_element = Element::Text {
                                                     text: text.to_string(),
-                                                    size: size,
+                                                    size,
                                                 };
                                                 elements.push(ListItem {
                                                     element: sub_element,
@@ -594,7 +594,7 @@ impl TransformerTrait for Transformer {
                                     elements.push(ListItem {
                                         element: Element::List {
                                             elements: sub_elements,
-                                            numbered: numbered,
+                                            numbered,
                                         },
                                     });
                                 }
@@ -677,7 +677,7 @@ impl TransformerTrait for Transformer {
                         }
                         page_header.push(Element::Text {
                             text: text.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                 }
@@ -706,7 +706,7 @@ impl TransformerTrait for Transformer {
                         }
                         page_footer.push(Element::Text {
                             text: text.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                 }
@@ -831,7 +831,7 @@ impl TransformerTrait for Transformer {
                         match &header.element {
                             Element::Text { text, size } => {
                                 writer.write_event(Event::Start(BytesStart::new("Text")))?;
-                                writer.write_event(Event::Text(BytesText::new(&text)))?;
+                                writer.write_event(Event::Text(BytesText::new(text)))?;
                                 writer.write_event(Event::End(BytesEnd::new("Text")))?;
                                 writer.write_event(Event::Start(BytesStart::new("Text")))?;
                                 writer
@@ -864,7 +864,7 @@ impl TransformerTrait for Transformer {
                                                 "Text",
                                             )))?;
                                             writer
-                                                .write_event(Event::Text(BytesText::new(&text)))?;
+                                                .write_event(Event::Text(BytesText::new(text)))?;
                                             writer
                                                 .write_event(Event::End(BytesEnd::new("Text")))?;
                                             writer.write_event(Event::Start(BytesStart::new(

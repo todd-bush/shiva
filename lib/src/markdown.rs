@@ -578,7 +578,7 @@ where
         Element::Image(image_data) => {
             *image_num.borrow_mut() += 1;
             let image_extension = image_data.image_type().to_extension();
-            let image_filename = format!("image{}{}", image_num.borrow(), image_extension);
+            let image_filename = format!("image{}{image_extension}", image_num.borrow());
 
             (image_saver.function)(image_data.bytes(), &image_filename)?;
 

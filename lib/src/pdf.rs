@@ -60,7 +60,7 @@ fn parse_object(
         elements: &mut Vec<Element>,
     ) -> anyhow::Result<()> {
         for operand in operands.iter() {
-            debug!("2 {:?}", operand);
+            debug!("2 {operand:?}");
             match *operand {
                 Object::String(ref bytes, _) => {
                     let decoded_text = PdfDocument::decode_text(encoding, bytes);
