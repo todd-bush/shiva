@@ -69,11 +69,3 @@ jobs:
 
     - name: Generate coverage report
       run: cargo tarpaulin --out Html --output-dir coverage
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage/tarpaulin-report.html
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: true 
