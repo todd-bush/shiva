@@ -292,7 +292,7 @@ impl TransformerTrait for Transformer {
                             title: title.to_string(),
                             url: url.to_string(),
                             alt: alt.to_string(),
-                            size: size,
+                            size,
                         });
                     }
                     "Header" => {
@@ -491,10 +491,7 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        elements.push(Element::Table {
-                            headers: headers,
-                            rows: rows,
-                        });
+                        elements.push(Element::Table { headers, rows });
                     }
                     "element" => {
                         elements = parse_element(element)?;
@@ -849,13 +846,12 @@ impl TransformerTrait for Transformer {
             element: &ListItem,
             writer: &mut Writer<&mut Vec<u8>>,
         ) -> Result<()> {
-            if let ListItem { element } = element {
-                writer.write_event(Event::Start(BytesStart::new("ListItem")))?;
-                writer.write_event(Event::Start(BytesStart::new("element")))?;
-                serialize_element(element, writer)?;
-                writer.write_event(Event::End(BytesEnd::new("element")))?;
-                writer.write_event(Event::End(BytesEnd::new("ListItem")))?;
-            }
+            let ListItem { element } = element;
+            writer.write_event(Event::Start(BytesStart::new("ListItem")))?;
+            writer.write_event(Event::Start(BytesStart::new("element")))?;
+            serialize_element(element, writer)?;
+            writer.write_event(Event::End(BytesEnd::new("element")))?;
+            writer.write_event(Event::End(BytesEnd::new("ListItem")))?;
             Ok(())
         }
 
