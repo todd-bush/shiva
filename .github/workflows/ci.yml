@@ -37,14 +37,20 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential pkg-config libssl-dev
 
-    - name: Build
-      run: cargo build --verbose --all-features
+    - name: Build lib and cli
+      run: |
+        cargo build --verbose --all-features -p shiva
+        cargo build --verbose --all-features -p shiva-cli
 
-    - name: Run tests
-      run: cargo test --verbose --all-features
+    - name: Run tests for lib and cli
+      run: |
+        cargo test --verbose --all-features -p shiva
+        cargo test --verbose --all-features -p shiva-cli
 
-    - name: Run clippy
-      run: cargo clippy --verbose --all-features -- -D warnings
+    - name: Run clippy for lib and cli
+      run: |
+        cargo clippy --verbose --all-features -p shiva -- -D warnings
+        cargo clippy --verbose --all-features -p shiva-cli -- -D warnings
 
     - name: Check formatting
       run: cargo fmt --all -- --check

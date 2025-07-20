@@ -34,28 +34,32 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential pkg-config libssl-dev
 
-    - name: Build
-      run: cargo build --release --verbose --all-features
+    - name: Build lib and cli
+      run: |
+        cargo build --release --verbose --all-features -p shiva
+        cargo build --release --verbose --all-features -p shiva-cli
 
-    - name: Run tests
-      run: cargo test --release --verbose --all-features
+    - name: Run tests for lib and cli
+      run: |
+        cargo test --release --verbose --all-features -p shiva
+        cargo test --release --verbose --all-features -p shiva-cli
 
     - name: Create release assets
       run: |
         mkdir -p dist
-        cp target/release/shiva dist/shiva-${{ matrix.target }}
+        cp target/release/shiva-cli dist/shiva-cli-${{ matrix.target }}
         if [ "${{ matrix.target }}" = "x86_64-unknown-linux-gnu" ]; then
-          cp target/release/shiva dist/shiva-linux-x86_64
+          cp target/release/shiva-cli dist/shiva-cli-linux-x86_64
         elif [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
-          cp target/release/shiva.exe dist/shiva-windows-x86_64.exe
+          cp target/release/shiva-cli.exe dist/shiva-cli-windows-x86_64.exe
         elif [ "${{ matrix.target }}" = "x86_64-apple-darwin" ]; then
-          cp target/release/shiva dist/shiva-macos-x86_64
+          cp target/release/shiva-cli dist/shiva-cli-macos-x86_64
         fi
 
     - name: Upload release assets
       uses: actions/upload-artifact@v4
       with:
-        name: shiva-${{ matrix.target }}
+        name: shiva-cli-${{ matrix.target }}
         path: dist/
 
   create-release:
@@ -72,7 +76,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          **/shiva-*
+          **/shiva-cli-*
         generate_release_notes: true
         draft: false
         prerelease: false
